@@ -25,11 +25,11 @@ def _has_comment_token(colors_comment: List) -> bool:
 
 
 def get_applied_colorscheme(config_path: str) -> Optional[str]:
-    with open(expanduser(config_path), 'r') as config_file:
+    with open(expanduser(config_path), "r") as config_file:
         config_yaml = yaml.load(config_file)
 
     try:
-        has_comment = _has_comment_token(config_yaml['colors'].ca.comment)
+        has_comment = _has_comment_token(config_yaml["colors"].ca.comment)
     except KeyError:
         return None
 
@@ -38,7 +38,7 @@ def get_applied_colorscheme(config_path: str) -> Optional[str]:
 
     comment_match = match(
         r"#\s*COLORSCHEME:\s*(.*)\s*\n",
-        config_yaml['colors'].ca.comment[1][0].value,
+        config_yaml["colors"].ca.comment[1][0].value,
     )
 
     if not comment_match:
@@ -56,50 +56,52 @@ def replace_colorscheme(
     debug: bool,
 ) -> None:
     try:
-        with open(expanduser(config_path), 'r') as config_file:
+        with open(expanduser(config_path), "r") as config_file:
             config_yaml = yaml.load(config_file)
     except OSError:
-        raise RuntimeError(f'Could not find a valid alacritty config file: {config_path}')
+        raise RuntimeError(
+            f"Could not find a valid alacritty config file: {config_path}"
+        )
 
     try:
-        with open(expanduser(colors_path), 'r') as color_file:
+        with open(expanduser(colors_path), "r") as color_file:
             colors_yaml = yaml.load(color_file)
     except OSError:
-        raise RuntimeError(f'Could not find a valid alacritty colorscheme file: {colors_path}')
+        raise RuntimeError(
+            f"Could not find a valid alacritty colorscheme file: {colors_path}"
+        )
 
     try:
         # NOTE: update method doesn't read the first comment
-        config_yaml['colors'].update(colors_yaml['colors'])
+        config_yaml["colors"].update(colors_yaml["colors"])
     except KeyError:
-        config_yaml['colors'] = colors_yaml['colors']
+        config_yaml["colors"] = colors_yaml["colors"]
     except TypeError:
         if not config_yaml:
-            config_yaml = {'colors': colors_yaml['colors']}
+            config_yaml = {"colors": colors_yaml["colors"]}
         else:
             raise
 
     new_comment_token = CommentToken(
-        f'# COLORSCHEME: {colorscheme}\n',
+        f"# COLORSCHEME: {colorscheme}\n",
         CommentMark(2),
         None,
     )
 
-    if _has_comment_token(config_yaml['colors'].ca.comment):
+    if _has_comment_token(config_yaml["colors"].ca.comment):
         # removing all comments for colors in config_file
-        while len(config_yaml['colors'].ca.comment[1]) > 0:
-            config_yaml['colors'].ca.comment[1].pop()
+        while len(config_yaml["colors"].ca.comment[1]) > 0:
+            config_yaml["colors"].ca.comment[1].pop()
 
         # adding current colorscheme name in comment
-        config_yaml['colors'].ca.comment[1].append(new_comment_token)
+        config_yaml["colors"].ca.comment[1].append(new_comment_token)
     else:
         # adding current colorscheme name in comment
-        config_yaml['colors'].ca.comment = [None, [new_comment_token]]
+        config_yaml["colors"].ca.comment = [None, [new_comment_token]]
 
     # adding all comments for colors from colors_file
-    if _has_comment_token(colors_yaml['colors'].ca.comment):
-        config_yaml['colors'].ca.comment[1].extend(
-            colors_yaml['colors'].ca.comment[1]
-        )
+    if _has_comment_token(colors_yaml["colors"].ca.comment):
+        config_yaml["colors"].ca.comment[1].extend(colors_yaml["colors"].ca.comment[1])
 
     try:
         with NamedTemporaryFile(delete=False) as tmp_file:
@@ -110,37 +112,35 @@ def replace_colorscheme(
             copyfile(tmp_file_path, expanduser(config_path))
         unlink(tmp_file_path)
     except OSError:
-        raise RuntimeError(f'Could not modify alacritty config file: {config_path}')
+        raise RuntimeError(f"Could not modify alacritty config file: {config_path}")
 
     if debug:
-        print(f'Applied colorscheme: {colorscheme}')
+        print(f"Applied colorscheme: {colorscheme}")
 
     if base16_vim:
-        vimrc_background_path = join('~', '.vimrc_background')
+        vimrc_background_path = join("~", ".vimrc_background")
         try:
-            with open(expanduser(vimrc_background_path), 'w') as vimrc_background_file:
+            with open(expanduser(vimrc_background_path), "w") as vimrc_background_file:
                 colorscheme_no_extension = splitext(colorscheme)[0]
                 vimrc_background_content = template_vimrc_background(
                     colorscheme_no_extension
                 )
                 vimrc_background_file.write(vimrc_background_content)
         except OSError:
-            raise RuntimeError(f'Could not save file: {vimrc_background_path}')
+            raise RuntimeError(f"Could not save file: {vimrc_background_path}")
 
         reload_neovim_sessions(vimrc_background_path)
 
 
 def get_applicable_colorscheme(
-    colorschemes: List[str],
-    colorscheme: Optional[str],
-    reverse_toggle: bool
+    colorschemes: List[str], colorscheme: Optional[str], reverse_toggle: bool
 ) -> Optional[str]:
     if colorscheme is None:
         index = 0
     else:
         try:
             original_index = colorschemes.index(colorscheme)
-            diff = - 1 if reverse_toggle else 1
+            diff = -1 if reverse_toggle else 1
             index = (original_index + diff) % len(colorschemes)
         except ValueError:
             index = 0
