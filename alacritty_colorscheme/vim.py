@@ -58,7 +58,10 @@ def template_vimrc_background(colorscheme: str) -> str:
     command = (
         f"if !exists('g:colors_name') || g:colors_name != '{colorscheme}'\n"
         f"  colorscheme {colorscheme}\n"
-        "endif")
+        "  call Base16hi('Comment', g:base16_gui09, '', g:base16_cterm09, '', '', '')\n"
+        "  call Base16hi('LspSignatureActiveParameter', g:base16_gui05, g:base16_gui03, g:base16_cterm05, g:base16_cterm03, 'bold', '')\n"
+        "endif"
+    )
     return command
 
 
