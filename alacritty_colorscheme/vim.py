@@ -1,6 +1,8 @@
 from os import listdir, environ
-from os.path import join
+from os import stat
+from os.path import isdir, join
 from pynvim import attach
+from stat import S_ISSOCK
 
 
 def template_vimrc_background(colorscheme: str) -> str:
@@ -17,11 +19,17 @@ def _get_all_instances():
 
     tmpdir = environ.get("TMPDIR", "/tmp")
 
-    folders = [f for f in listdir(tmpdir) if f.startswith('nvim')]
-    for folder in folders:
-        dc = listdir(join(tmpdir, folder))
-        if '0' in dc:
-            instances.append(join(tmpdir, folder, '0'))
+    entries = [f for f in listdir(tmpdir) if f.startswith("nvim")]
+    for entry in entries:
+        path = join(tmpdir, entry)
+        if not isdir(path) and S_ISSOCK(stat(path).st_mode):
+            instances.append(path)
+        else:
+            dc = listdir(path)
+            if "0" in dc:
+                instance = join(path, "0")
+                if not isdir(instance) and S_ISSOCK(stat(instance).st_mode):
+                    instances.append(instance)
 
     return instances
 
